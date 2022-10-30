@@ -102,6 +102,7 @@ class FaceDB:
         subject_id_0 int,
         subject_id_1 int,
         similarity float,
+        frame_difference int,
 
         created_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime')),
         updated_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime'))
@@ -117,6 +118,7 @@ class FaceDB:
 
         # データベースへコミット。これで変更を反映される
         conn.commit()
+        self.bonds_col = ['id','subject_id_0','subject_id_1','similarity','frame_difference','created_at','updated_at']
 
     def DeleteTable(self):
         cur = self.cursor
@@ -134,7 +136,7 @@ class FaceDB:
     # Moviesのレコードの追加
     def InsertMovies(self,name,fps,frame,path):
         cur = self.cursor
-        SQL = f"select * from Movies where name = '{name}'"
+        SQL = f"SELECT * FROM Movies WHERE name = '{name}'"
         if len(cur.execute(SQL).fetchall()) == 0:
             SQL = f"insert into Movies(name,fps,frame,path) values('{name}',{fps},{frame},'{path}') on conflict (name) do nothing"
             cur.execute(SQL)
@@ -146,11 +148,11 @@ class FaceDB:
     # Moviesのレコードの追加または、fps,frameの更新
     def UpdateMovies(self,name,fps,frame,path):
         cur = self.cursor
-        id = cur.execute(f"select id from Movies where name = '{name}'").fetchone()
+        id = cur.execute(f"SELECT id FROM Movies WHERE name = '{name}'").fetchone()
         if id:
-            SQLs = [f"update Movies set fps = {fps} where id = {id[0]}",
-                    f"update Movies set frame = {frame} where id = {id[0]}",
-                    f"update Movies set path = '{path}' where id = {id[0]}"]
+            SQLs = [f"update Movies set fps = {fps} WHERE id = {id[0]}",
+                    f"update Movies set frame = {frame} WHERE id = {id[0]}",
+                    f"update Movies set path = '{path}' WHERE id = {id[0]}"]
             for SQL in SQLs:
                 cur.execute(SQL)
             self.connect.commit()
@@ -162,14 +164,14 @@ class FaceDB:
             col = ['id','name', 'fps', 'frame', 'path', 'created_at','updated_at']
         terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
         col_str = self.GenerateColumnStr(col)
-        SQL = f"select {col_str} from Movies {terms_SQL}"
+        SQL = f"SELECT {col_str} FROM Movies  {terms_SQL}"
         records = self.cursor.execute(SQL).fetchall()
         return self.GenerateRecordsInDict(col,records)
 
     # Movies Table
     # nameからデータベースにおけるidを取得
     def GetMoviesProperty(self):
-        SQL = f"select id,name,fps,frame,path from Movies"
+        SQL = f"SELECT id,name,fps,frame,path FROM Movies"
         return [{'id':v[0],'name':v[1],'fps':v[2],'frame':v[3],'path':v[4]} for v in self.cursor.execute(SQL).fetchall()]
 
     """Completes"""
@@ -189,10 +191,10 @@ class FaceDB:
             print('value is not dict.')
             return 0
         cur = self.cursor
-        id = cur.execute(f"select id from Completes where movie_id = {value['movie_id']}").fetchone()
+        id = cur.execute(f"SELECT id FROM Completes WHERE movie_id = {value['movie_id']}").fetchone()
         if id:
             set_str = ''.join([f' {k} = {v},' for k,v in zip(value.keys(),value.values())])[:-1]
-            SQLs = [f"update Completes set{set_str} where id = {id[0]}"]
+            SQLs = [f"update Completes set{set_str} WHERE id = {id[0]}"]
             for SQL in SQLs:
                 cur.execute(SQL)
             self.connect.commit()
@@ -204,7 +206,7 @@ class FaceDB:
             col = ['id','movie_id','flag_main','flag_subject','flag_bond','flag_split','created_at','updated_at']
         terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
         col_str = self.GenerateColumnStr(col)
-        SQL = f"select {col_str} from Completes {terms_SQL}"
+        SQL = f"SELECT {col_str} FROM Completes  {terms_SQL}"
         records = self.cursor.execute(SQL).fetchall()
         return self.GenerateRecordsInDict(col,records)
 
@@ -234,7 +236,7 @@ class FaceDB:
                 flag = False
             else:
                 terms_SQL += f"AND {k} = {terms[k]} "
-        SQL = "select * from Subjects where " + terms_SQL
+        SQL = "SELECT * FROM Subjects WHERE " + terms_SQL
         records = self.cursor.execute(SQL).fetchall()
 
         col = ['id','movie_id','order_number','face_id','created_at','updated_at']
@@ -267,7 +269,7 @@ class FaceDB:
         self.connect.commit()
 
     # def GetFaces(self,id):
-    #     SQL = f"select * from Faces where id = {id}"
+    #     SQL = f"SELECT * FROM Faces WHERE id = {id}"
     #     return self.cursor.execute(SQL).fetchone()
 
     def GetFaces(self,col,terms):
@@ -275,34 +277,39 @@ class FaceDB:
             col = ['id','movie_id', 'frame', 'bbox', 'kps', 'det_score', 'landmark_3d_68', 'pose', 'landmark_2d_106', 'gender', 'age', 'embedding', 'created_at','updated_at']
         terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
         col_str = self.GenerateColumnStr(col)
-        SQL = f"select {col_str} from Faces {terms_SQL}"
+        SQL = f"SELECT {col_str} FROM Faces  {terms_SQL}"
         records = self.cursor.execute(SQL).fetchall()
         return self.GenerateRecordsInDict(col,records)
 
 
     def GetFacesLastFrame(self,movie_id):
         cur = self.cursor
-        SQL = f"select frame from Faces where movie_id = {movie_id} order by frame"
+        SQL = f"SELECT frame FROM Faces WHERE movie_id = {movie_id} order by frame"
         records = cur.execute(SQL).fetchall()
         if len(records) > 0:
             return records[-1][0]
         else:
             return 1
 
-    def GetFacesLastRecord(self,movie_id):
+    def GetFacesLastRecord(self,col,terms):
+        if '*' in col:
+            col = ['id','movie_id', 'frame', 'bbox', 'kps', 'det_score', 'landmark_3d_68', 'pose', 'landmark_2d_106', 'gender', 'age', 'embedding', 'created_at','updated_at']
+        terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
+        col_str = self.GenerateColumnStr(col)
         cur = self.cursor
-        SQL = f"select * from Faces where movie_id = {movie_id} order by id desc limit 1"
-        record = cur.execute(SQL).fetchone()
-        return record
+        SQL = f"SELECT {col_str} FROM Faces  {terms_SQL} order by id desc limit 1"
+        records = cur.execute(SQL).fetchall()
+        return self.GenerateRecordsInDict(col,records)[0]
 
     def DeleteFacesByFrame(self,movie_id,frame):
         cur = self.cursor
-        SQL = f"delete from Faces where movie_id = {movie_id} and frame = {frame}"
+        SQL = f"delete FROM Faces WHERE movie_id = {movie_id} AND frame = {frame}"
         cur.execute(SQL)
         self.connect.commit()
 
 
     """FaceSubjects"""
+    face_subjects_col = ['id','face_id','subject_id','created_at','updated_at']
     def InsertFaceSubjects(self,face_id,subject_id):
         SQL = f"insert into FaceSubjects(face_id,subject_id) values({face_id},{subject_id})"
         self.cursor.execute(SQL)
@@ -311,44 +318,27 @@ class FaceDB:
     # FaceSubjectsのレコードの追加または、subject_idの更新
     def UpdateFaceSubjects(self,face_id,subject_id):
         cur = self.cursor
-        id = cur.execute(f"select id from FaceSubjects where face_id = '{face_id}'").fetchone()
+        id = cur.execute(f"SELECT id FROM FaceSubjects WHERE face_id = '{face_id}'").fetchone()
         if id:
-            SQLs = [f"update FaceSubjects set subject_id = {subject_id} where id = {id[0]}"]
+            SQLs = [f"update FaceSubjects set subject_id = {subject_id} WHERE id = {id[0]}"]
             for SQL in SQLs:
                 cur.execute(SQL)
             self.connect.commit()
         else:
             self.InsertFaceSubjects(face_id,subject_id)
 
-    def GetFaceSubjects(self,terms):
-        if not isinstance(terms, dict):
-            print('terms is not dict.')
-            return 0
-        terms_SQL = ""
-        flag = True
-        for k in terms.keys():
-            if flag:
-                terms_SQL += f"{k} = {terms[k]} "
-                flag = False
-            else:
-                terms_SQL += f"AND {k} = {terms[k]} "
-
-        SQL = f"select * from FaceSubjects where " + terms_SQL
+    def GetFaceSubjects(self,col,terms):
+        if '*' in col:
+            col = face_subjects_col
+        terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
+        col_str = self.GenerateColumnStr(col)
+        SQL = f"SELECT {col_str} FROM FaceSubjects  {terms_SQL}"
         records = self.cursor.execute(SQL).fetchall()
-
-        col = ['id','face_id','subject_id','created_at','updated_at']
-
-        output_records = []
-        for record in records:
-            record_dic = {}
-            for i in range(len(col)):
-                record_dic[col[i]] = record[i]
-            output_records.append(record_dic)
-        return output_records
+        return self.GenerateRecordsInDict(col,records)
 
     def GetFaceSubjectsLastRecord(self,subject_id):
         cur = self.cursor
-        SQL = f"select * from FaceSubjects where subject_id = {subject_id} order by id desc limit 1"
+        SQL = f"SELECT * FROM FaceSubjects WHERE subject_id = {subject_id} order by id desc limit 1"
         record = cur.execute(SQL).fetchone()
         return record
 
@@ -361,78 +351,61 @@ class FaceDB:
         for k in terms:
             if isinstance(terms[k],list):
                 str = ''.join([f'{v},' for v in terms[k]])
-
                 terms_SQL = f"{k} in({str[0:-1]})"
-
-                SQL = f"select * from FaceSubjects where " + terms_SQL
-
+                SQL = f"SELECT * FROM FaceSubjects WHERE " + terms_SQL
                 records = self.cursor.execute(SQL).fetchall()
-
-                col = ['id','face_id','subject_id','created_at','updated_at']
-
-                output_records = []
-                for record in records:
-                    record_dic = {}
-                    for i in range(len(col)):
-                        record_dic[col[i]] = record[i]
-                    output_records.append(record_dic)
-                return output_records
+                col = face_subjects_col
+                return self.GenerateRecordsInDict(col,records)
 
     """Bonds"""
-    def GetBonds(self,terms):
-        if not isinstance(terms, dict):
-            print('terms is not dict.')
-            return 0
-        terms_SQL = ""
-        flag = True
-        for k in terms.keys():
-            if flag:
-                terms_SQL += f"{k} = {terms[k]} "
-                flag = False
-            else:
-                terms_SQL += f"AND {k} = {terms[k]} "
-
-        SQL = f"select * from Bonds where " + terms_SQL
+    # self.bonds_col = ['id','subject_id_0','subject_id_1','similarity','frame_difference','created_at','updated_at']
+    def GetBonds(self,col=['*'],terms={}):
+        if '*' in col:
+            col = self.bonds_col
+        terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
+        col_str = self.GenerateColumnStr(col)
+        SQL = f"SELECT {col_str} FROM Bonds  {terms_SQL}"
         records = self.cursor.execute(SQL).fetchall()
+        return self.GenerateRecordsInDict(col,records)
 
-        col = ['id','subject_id_0','subject_id_1','similarity','created_at','updated_at']
-
-        output_records = []
-        for record in records:
-            record_dic = {}
-            for i in range(len(col)):
-                record_dic[col[i]] = record[i]
-            output_records.append(record_dic)
-        return output_records
-
-    def InsertBonds(self,subject_id_0,subject_id_1,sim):
-        SQL = f"insert into Bonds(subject_id_0,subject_id_1,similarity) values({subject_id_0},{subject_id_1},{sim})"
+    def InsertBonds(self,terms):
+        col = "".join([f"{k}," for k in terms.keys()])[:-1]
+        val = "".join([f"{v}," for v in terms.values()])[:-1]
+        SQL = f"insert into Bonds({col}) values({val})"
         self.cursor.execute(SQL)
         self.connect.commit()
 
     # Bondsのレコードの追加または、subject_idの更新
-    def UpdateBonds(self,subject_id_0,subject_id_1,sim):
+    def UpdateBonds(self,terms):
         cur = self.cursor
-        id = cur.execute(f"select id from Bonds where subject_id_0 = {subject_id_0}").fetchone()
+        id = cur.execute(f"SELECT id FROM Bonds WHERE subject_id_0 = {terms['subject_id_0']}").fetchone()
         if id:
-            SQLs = [f"update Bonds set subject_id_1 = {subject_id_1} where id = {id[0]}",f"update Bonds set similarity = {sim} where id = {id[0]}"]
+            set_str = ''.join([f' {k} = {v},' for k,v in zip(terms.keys(),terms.values())])[:-1]
+            SQLs = [f"update Bonds set{set_str} WHERE id = {id[0]}"]
             for SQL in SQLs:
                 cur.execute(SQL)
             self.connect.commit()
         else:
-            self.InsertBonds(subject_id_0,subject_id_1,sim)
+            self.InsertBonds(terms)
+
+    def DeleteBonds(self,terms):
+        cur = self.cursor
+        terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
+        SQL = f"DELETE FROM Bonds {terms_SQL}"
+        self.cursor.execute(SQL)
+        self.connect.commit()
 
     """Other"""
     # face_idが一致するFaceSubjectsを取得
     def GetSubjectIdentify(self,face_id):
-        face_subject_records = self.GetFaceSubjects({'face_id':face_id})
+        face_subject_records = self.GetFaceSubjects(['id','face_id','subject_id'],{'face_id':face_id})
         print(face_subject_records)
         if len(face_subject_records) > 0:
             subject_id = face_subject_records[0]['subject_id']
             subject_records = self.GetSubjects({'id':subject_id})
             if len(subject_records) > 0:
                 subject_record = subject_records[0]
-                movie_records = self.GetMovies({'id':subject_record['movie_id']})
+                movie_records = self.GetMovies(['name'],{'id':subject_record['movie_id']})
                 #print('movie_records',movie_records)
                 movie_name = movie_records[0]['name']
 
@@ -457,7 +430,7 @@ class FaceDB:
         flag = True
         for k in terms.keys():
             if flag:
-                terms_SQL += f"where {k} = {terms[k]} "
+                terms_SQL += f"WHERE {k} = {terms[k]} "
                 flag = False
             else:
                 terms_SQL += f"AND {k} = {terms[k]} "

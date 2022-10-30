@@ -6,11 +6,11 @@ import os
 import pandas as pd
 import argparse
 
-path = 'movie/movie_list.csv'
+path = 'db/movie/movie_list.csv'
 def addUrl(urls):
 	df = pd.DataFrame(columns=["ID","URL","Append","DL"])
-	if not glob.glob("movie"):
-		os.mkdir("movie")
+	if not glob.glob("db/movie"):
+		os.mkdir("db/movie")
 	if glob.glob(path):
 		df = pd.read_csv(path)
 
@@ -32,7 +32,7 @@ def ytDL():
 			print(df["DL"][idx])
 			if not df["DL"][idx]==df["DL"][idx]:
 				print(df["ID"][idx])
-				command = ["yt-dlp","-f","mp4","-o","movie/%(id)s.%(ext)s",df["URL"][idx]]
+				command = ["yt-dlp","-f","mp4","-o","db/movie/%(id)s.%(ext)s",df["URL"][idx]]
 				proc = subprocess.Popen(command)
 				proc.communicate()
 				df["DL"][idx] = datetime.datetime.now()
