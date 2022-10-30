@@ -86,7 +86,7 @@ for movies in sql.GetMoviesProperty():
                 dup_subject_id_1.append(subject_id_1)
                 dup_records = {record['id']:record['similarity'] for record in [r for r in records if r['subject_id_1'] == subject_id_1]}
                 for (idx, sim) in sorted(dup_records.items(), key=lambda x:x[1])[0:-1]:
-                    sql.DeleteBonds({'id':idx})
+                    sql.DeleteRecords('Bonds',{'id':idx})
 
         table = tabulate(tabular_data=groups, headers=['subject_id_0','subject_id_1','sim'])
         # print(table)

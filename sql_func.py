@@ -119,6 +119,12 @@ class FaceDB:
         # データベースへコミット。これで変更を反映される
         conn.commit()
         self.bonds_col = ['id','subject_id_0','subject_id_1','similarity','frame_difference','created_at','updated_at']
+        self.movies_col = ['id','name', 'fps', 'frame', 'path', 'created_at','updated_at']
+        self.completes_col = ['id','movie_id','flag_main','flag_subject','flag_bond','flag_split','created_at','updated_at']
+        self.faces_col = ['id','movie_id', 'frame', 'bbox', 'kps', 'det_score', 'landmark_3d_68', 'pose', 'landmark_2d_106', 'gender', 'age', 'embedding', 'created_at','updated_at']
+        self.subjects_col = ['id','movie_id','order_number','face_id','created_at','updated_at']
+        self.face_subjects_col = ['id','face_id','subject_id','created_at','updated_at']
+        self.col_dic = {'Movies':self.movies_col,'Bonds':self.bonds_col,'Completes':self.completes_col,'Faces':self.faces_col,'Subjects':self.subjects_col,'FaceSubjects':self.face_subjects_col}
 
     def DeleteTable(self):
         cur = self.cursor
@@ -388,10 +394,43 @@ class FaceDB:
         else:
             self.InsertBonds(terms)
 
-    def DeleteBonds(self,terms):
+    """ALL"""
+    def GetRecords(self,table='',col=['*'],terms={}):
+        if '*' in col:
+            col = self.col_dic[table]
+        terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
+        col_str = self.GenerateColumnStr(col)
+        SQL = f"SELECT {col_str} FROM {table} {terms_SQL}"
+        records = self.cursor.execute(SQL).fetchall()
+        return self.GenerateRecordsInDict(col,records)
+
+    def InsertRecords(self,table,values):
+        col = "".join([f"{k}," for k in values.keys()])[:-1]
+        val = "".join(["?," for v in values.values()])[:-1]
+        insert_data = [v for v in values.values()]
+        SQL = f"INSERT INTO {table}({col}) VALUES({val})"
+        # print(SQL)
+        self.cursor.execute(SQL,insert_data)
+        self.connect.commit()
+
+    def UpdateRecords(self,table,terms,values):
         cur = self.cursor
         terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
-        SQL = f"DELETE FROM Bonds {terms_SQL}"
+        id = cur.execute(f"SELECT id FROM {table} {terms_SQL}").fetchone()
+        if id:
+            for k in values.keys():
+                if isinstance(values[k], str):
+                    values[k] = f"'{values[k]}'"
+            set_str = ''.join([f' {k} = {v},' for k,v in zip(values.keys(),values.values())])[:-1]
+            cur.execute(f"UPDATE {table} SET{set_str} WHERE id = {id[0]}")
+            self.connect.commit()
+        else:
+            self.InsertRecords(table,values)
+
+    def DeleteRecords(self,table,terms):
+        cur = self.cursor
+        terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
+        SQL = f"DELETE FROM {table} {terms_SQL}"
         self.cursor.execute(SQL)
         self.connect.commit()
 
@@ -429,6 +468,8 @@ class FaceDB:
         terms_SQL = ""
         flag = True
         for k in terms.keys():
+            if isinstance(terms[k], str):
+                terms[k] = f"'{terms[k]}'"
             if flag:
                 terms_SQL += f"WHERE {k} = {terms[k]} "
                 flag = False
