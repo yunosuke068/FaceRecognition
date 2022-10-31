@@ -46,7 +46,7 @@ def RecordsCombination(records_prev,records_current):
             return [rc_ids,[rp_ids[max_id] for max_id in max_ids]]
 
     elif len(rc_ids) > len(rp_ids): # Faceが増える
-        sim_matrix[sim_matrix < 0] = 0
+        sim_matrix[sim_matrix < 0] = -1
         max_ids = np.argmax(sim_matrix, axis=1)
         (unique_ids, unique_counts) = np.unique(max_ids, return_counts=True) # max_idsの固有の要素と要素の数
         max_ids_dup = unique_ids[unique_counts > 1] # 重複している要素
@@ -64,7 +64,6 @@ def RecordsCombination(records_prev,records_current):
             # for del_idx in sim_arr[np.sum(sim_matrix,axis=1) <= -1.0]:
             #     sim_matrix = np.delete(sim_matrix,del_idx,0)
             #     del_lis.append(del_idx)
-
             del_idxs = sim_arr[np.sum(sim_matrix,axis=1) <= -1.0]
             del_lis.extend(del_idxs.tolist())
             sim_matrix = np.delete(sim_matrix,del_idxs,0)

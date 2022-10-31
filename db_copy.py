@@ -7,13 +7,13 @@ import time
 
 import movie_func, sql_func, my_func
 
-path = 'db/split_db/FaceDB1_5.db'
-# path = 'db/split_db/FaceDB6_.db'
+# path = 'db/split_db/FaceDB1_5.db'
+path = 'db/split_db/FaceDB6_.db'
 # path = 'db/FaceDB_test.db'
 sql = sql_func.FaceDB(path)
 
-ids = [1,2,3,4,5]
-# ids = [7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+# ids = [1,2,3,4,5]
+ids = range(25,50)#[21,22,23,24]
 for id in ids:
     path2 = f'db/split_db/FaceDB{id}.db'
     if os.path.exists(path2):

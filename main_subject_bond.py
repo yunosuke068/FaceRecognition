@@ -18,25 +18,32 @@ if len(args) < 2:
 path = args[1]# 'db/split_db/FaceDB1.db'
 sql = sql_func.FaceDB(path)
 
-for movies in sql.GetMoviesProperty():
+for movies in sql.GetRecords('Movies',['id'],{}): # GetMoviesProperty()
     movie_id = movies['id']
     print(movies)
-    subject_records = sql.GetSubjects({'movie_id':movie_id})
+    subject_records = sql.GetRecords('Subjects',['id'],{'movie_id':movie_id}) # sql.GetSubjects({'movie_id':movie_id})
     subject_records
 
     face_subjects = []
-    if sql.GetCompletes(['movie_id','flag_bond'],{'movie_id':movie_id})[0]['flag_bond'] != 1:
-        for subject_record in subject_records:
-            subject_id = subject_record['id']
-            fs_record = face_subject_record = sorted(sql.GetFaceSubjects(['id','face_id','subject_id'],{'subject_id':subject_id}), key=itemgetter('face_id'))
-            if len(fs_record) != 0:
-                face_id_first = fs_record[0]['face_id']
-                face_id_last = fs_record[-1]['face_id']
+    # if sql.GetCompletes(['movie_id','flag_bond'],{'movie_id':movie_id})[0]['flag_bond'] != 1:
+    if sql.GetRecords('Completes',['movie_id','flag_bond'],{'movie_id':movie_id})[0]['flag_bond'] != 1:
+        for sr in subject_records:
+            subject_id = sr['id']
+            # fsr = sorted(sql.GetFaceSubjects(['id','face_id','subject_id'],{'subject_id':subject_id}), key=itemgetter('face_id'))
+            fsr = sorted(sql.GetRecords('FaceSubjects',['id','face_id','subject_id'],{'subject_id':subject_id}), key=itemgetter('face_id'))
+            if len(fsr) != 0:
+                face_id_first = fsr[0]['face_id']
+                face_id_last = fsr[-1]['face_id']
+                # face_subjects.append({'subject_id':subject_id,
+                #                       'face_id_first':face_id_first,
+                #                       'frame_first':sql.GetFaces(['id','frame'],{'id':face_id_first})[0]['frame'],
+                #                       'face_id_last':face_id_last,
+                #                       'frame_last':sql.GetFaces(['id','frame'],{'id':face_id_last})[-1]['frame']})
                 face_subjects.append({'subject_id':subject_id,
                                       'face_id_first':face_id_first,
-                                      'frame_first':sql.GetFaces(['id','frame'],{'id':face_id_first})[0]['frame'],
+                                      'frame_first':sql.GetRecords('Faces',['id','frame'],{'id':face_id_first})[0]['frame'],
                                       'face_id_last':face_id_last,
-                                      'frame_last':sql.GetFaces(['id','frame'],{'id':face_id_last})[-1]['frame']})
+                                      'frame_last':sql.GetRecords('Faces',['id','frame'],{'id':face_id_last})[-1]['frame']})
 
 
         groups = []
@@ -44,23 +51,25 @@ for movies in sql.GetMoviesProperty():
         sim_thre = 0.50
         for i,face_subject_0 in tqdm(enumerate(face_subjects),ncols=0):
             subject_id_0 = face_subject_0['subject_id']
-            facesubjects_records_0 = sql.GetFaceSubjects(['id','face_id','subject_id'],{'subject_id':subject_id_0})
-            if len (facesubjects_records_0) > frame_scope:
-                # face_record_0_last = sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_0[-1*frame_scope]['face_id']})[0]
-                face_record_0s = [sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_0[-1*c_i]['face_id']})[0] for c_i in range(frame_scope)]
+            # facesubjects_records_0 = sql.GetFaceSubjects(['id','face_id','subject_id'],{'subject_id':subject_id_0})
+            facesubjects_records_0 = sql.GetRecords('FaceSubjects',['id','face_id','subject_id'],{'subject_id':subject_id_0})
+            if len(facesubjects_records_0) > frame_scope:
+                # face_record_0s = [sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_0[-1*c_i]['face_id']})[0] for c_i in range(frame_scope)]
+                face_record_0s = [sql.GetRecords('Faces',['id','frame','embedding'],{'id':facesubjects_records_0[-1*c_i]['face_id']})[0] for c_i in range(frame_scope)]
             else:
-                # face_record_0_last = sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_0[-1]['face_id']})[0]
-                face_record_0s = [sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_0[-1*c_i]['face_id']})[0] for c_i in range(len(facesubjects_records_0))]
+                # face_record_0s = [sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_0[-1*c_i]['face_id']})[0] for c_i in range(len(facesubjects_records_0))]
+                face_record_0s = [sql.GetRecords('Faces',['id','frame','embedding'],{'id':facesubjects_records_0[-1*c_i]['face_id']})[0] for c_i in range(len(facesubjects_records_0))]
 
             for l,face_subject_1 in enumerate(face_subjects[i+1:]):
                 subject_id_1 = face_subject_1['subject_id']
-                facesubjects_records_1 = sql.GetFaceSubjects(['id','face_id','subject_id'],{'subject_id':subject_id_1})
-                if len (facesubjects_records_1) > frame_scope:
-                    # face_record_1_first = sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_1[frame_scope]['face_id']})[0]
-                    face_record_1s = [sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_1[c_i]['face_id']})[0] for c_i in range(frame_scope)]
+                # facesubjects_records_1 = sql.GetFaceSubjects(['id','face_id','subject_id'],{'subject_id':subject_id_1})
+                facesubjects_records_1 = sql.GetRecords('FaceSubjects',['id','face_id','subject_id'],{'subject_id':subject_id_1})
+                if len(facesubjects_records_1) > frame_scope:
+                    # face_record_1s = [sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_1[c_i]['face_id']})[0] for c_i in range(frame_scope)]
+                    face_record_1s = [sql.GetRecords('Faces',['id','frame','embedding'],{'id':facesubjects_records_1[c_i]['face_id']})[0] for c_i in range(frame_scope)]
                 else:
-                    # face_record_1_first = sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_1[0]['face_id']})[0]
-                    face_record_1s = [sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_1[c_i]['face_id']})[0] for c_i in range(len(facesubjects_records_1))]
+                    # face_record_1s = [sql.GetFaces(['id','frame','embedding'],{'id':facesubjects_records_1[c_i]['face_id']})[0] for c_i in range(len(facesubjects_records_1))]
+                    face_record_1s = [sql.GetRecords('Faces',['id','frame','embedding'],{'id':facesubjects_records_1[c_i]['face_id']})[0] for c_i in range(len(facesubjects_records_1))]
 
                 # sim = my_func.ComputeSim(face_record_0_last['embedding'],face_record_1_first['embedding'])
                 sims = []
@@ -73,12 +82,14 @@ for movies in sql.GetMoviesProperty():
                 if face_record_0s[-1]['frame'] < face_record_1s[0]['frame']:
                     if sim > sim_thre:
                         groups.append([subject_id_0,subject_id_1,sim])
-                        sql.UpdateBonds({'subject_id_0':subject_id_0,'subject_id_1':subject_id_1,'similarity':sim,'frame_difference':(face_record_1s[0]['frame']-face_record_0s[-1]['frame'])})
+                        # sql.UpdateBonds({'subject_id_0':subject_id_0,'subject_id_1':subject_id_1,'similarity':sim,'frame_difference':(face_record_1s[0]['frame']-face_record_0s[-1]['frame'])})
+                        sql.UpdateRecords('Bonds',{'subject_id_0':subject_id_0},{'subject_id_0':subject_id_0,'subject_id_1':subject_id_1,'similarity':sim,'frame_difference':(face_record_1s[0]['frame']-face_record_0s[-1]['frame'])})
                         break
 
 
         # subject_id_1で重複の発生するレコードを削除
-        records = sql.GetBonds(['id','subject_id_0','subject_id_1','similarity','frame_difference'],{})
+        # records = sql.GetBonds(['id','subject_id_0','subject_id_1','similarity','frame_difference'],{})
+        records = sql.GetRecords('Bonds',['id','subject_id_0','subject_id_1','similarity','frame_difference'],{})
         dup_subject_id_1 = []
         for subject_id_1 in set([r['subject_id_1'] for r in records]):
             counts = len([r for r in records if r['subject_id_1'] == subject_id_1]) # subject_id_1の重複数
@@ -90,4 +101,5 @@ for movies in sql.GetMoviesProperty():
 
         table = tabulate(tabular_data=groups, headers=['subject_id_0','subject_id_1','sim'])
         # print(table)
-        sql.UpdateCompletes({'movie_id':movie_id,'flag_bond':True})
+        # sql.UpdateCompletes({'movie_id':movie_id,'flag_bond':True})
+        sql.UpdateRecords('Completes',{'movie_id':movie_id},{'flag_bond':True})
