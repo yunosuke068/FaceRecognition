@@ -8,3 +8,8 @@ Untitled.ipynb
 __pycache__/
 split_movie/
 test.py
+.vscode/
+images/
+pip.conf
+test.jpg
+test_anot.png

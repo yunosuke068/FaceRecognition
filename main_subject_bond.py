@@ -1,10 +1,11 @@
+from common_module import movie_func
 import numpy as np
 import cv2
 import os, glob, sys
 from tqdm import tqdm
 import time
 
-import movie_func, sql_func, my_func
+from face_recognition_module import sql_func, my_func
 
 from operator import itemgetter
 from tabulate import tabulate
@@ -49,6 +50,7 @@ for movies in sql.GetRecords('Movies',['id'],{}): # GetMoviesProperty()
         groups = []
         frame_scope = 10 # 3
         sim_thre = 0.50
+        print(len(face_subjects))
         for i,face_subject_0 in tqdm(enumerate(face_subjects),ncols=0):
             subject_id_0 = face_subject_0['subject_id']
             # facesubjects_records_0 = sql.GetFaceSubjects(['id','face_id','subject_id'],{'subject_id':subject_id_0})

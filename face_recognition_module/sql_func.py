@@ -421,6 +421,8 @@ class FaceDB:
             for k in values.keys():
                 if isinstance(values[k], str):
                     values[k] = f"'{values[k]}'"
+                if values[k] is None:
+                    values[k] = 'NULL'
             set_str = ''.join([f' {k} = {v},' for k,v in zip(values.keys(),values.values())])[:-1]
             cur.execute(f"UPDATE {table} SET{set_str} WHERE id = {id[0]}")
             self.connect.commit()
@@ -485,11 +487,11 @@ class FaceDB:
 
 
 def main():
-    path = 'db/FaceDB.db'
-    #FaceDB(path).DeleteTable()
-    FaceDB(path)
-    print(f'create {path}')
+    # path = 'db/FaceDB.db'
+    # #FaceDB(path).DeleteTable()
+    # FaceDB(path)
+    # print(f'create {path}')
+    print('sql_func')
 
 if __name__ == '__main__':
-
     main()

@@ -1,3 +1,4 @@
+from common_module import movie_func
 import insightface
 
 import numpy as np
@@ -5,19 +6,19 @@ import cv2
 import os, glob
 from tqdm import tqdm
 
-import movie_func, sql_func
+from face_recognition_module import sql_func
 
 path = 'db/FaceDB.db'
 sql = sql_func.FaceDB(path)
 
-for path in glob.glob('db/movie/*.mp4'):
-    name = os.path.basename(path).replace('.mp4','')
-    movie = movie_func.Movie(path)
-    frame = movie.frame_count
-    fps = movie.fps
-    sql.UpdateMovies(name,fps,frame,path)
-    movie_id = sql.GetMovies(['id'],{'name':f"'{name}'"})[0]['id']
-    sql.UpdateCompletes({'movie_id':movie_id})
+# for path in glob.glob('db/movie/*.mp4'):
+#     name = os.path.basename(path).replace('.mp4','')
+#     movie = movie_func.Movie(path)
+#     frame = movie.frame_count
+#     fps = movie.fps
+#     sql.UpdateMovies(name,fps,frame,path)
+#     movie_id = sql.GetMovies(['id'],{'name':f"'{name}'"})[0]['id']
+#     sql.UpdateCompletes({'movie_id':movie_id})
 
 face_analytics = insightface.app.FaceAnalysis()
 face_analytics.prepare(ctx_id=0, det_size=(640,640))

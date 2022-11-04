@@ -1,12 +1,13 @@
 # FacesテーブルとSubjectsテーブルの中間テーブルの生成
 
+from common_module import movie_func
 import numpy as np
 import cv2
 import os, glob, sys
 from tqdm import tqdm
 import time
 
-import movie_func, sql_func, my_func
+from face_recognition_module import sql_func, my_func
 from operator import itemgetter
 
 args = sys.argv
@@ -27,16 +28,21 @@ for movie_record in movie_records:
     if (sql.GetRecords('Completes',['movie_id','flag_main'],{'movie_id':movie_id})[0]['flag_main'] == 1)&(sql.GetRecords('Completes',['movie_id','flag_subject'],{'movie_id':movie_id})[0]['flag_subject'] != 1):
         if len(sql.GetRecords('FaceSubjects',['id'],{'face_id':sql.GetFacesLastRecord(['id'],{'movie_id':movie_id})['id']})) == 0:
             frame_last = sql.GetFacesLastFrame(movie_record['id'])
-            last_face_id = sorted(sql.GetRecords('FaceSubjects',['id','face_id'],{}),key=itemgetter('face_id'))[-1]['face_id']
-            frame_start = sql.GetRecords('Faces',['frame'],{'id':last_face_id})[0]['frame']
+            fsrs = sorted(sql.GetRecords('FaceSubjects',['id','face_id'],{}),key=itemgetter('face_id'))
+            if len(fsrs) > 0:
+                last_face_id = fsrs[-1]['face_id']
+                frame_start = sql.GetRecords('Faces',['frame'],{'id':last_face_id})[0]['frame']
+            else:
+                frame_start = 1
             # for frame in tqdm(np.arange(1,frame_last+1,10)):78101
             print('frame_start:',frame_start,'frame_last:',frame_last)
             progressbar = tqdm(np.arange(frame_start,frame_last+1,10),ncols= 0)
             progressbar.set_description(f"movie_id:{movie_id}")
+            frs_all = sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id})
             for frame in progressbar:
-                face_records = sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id,'frame':frame})
+                face_records = [r for r in frs_all if r['frame'] == frame]#sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id,'frame':frame})
 
-                face_records_prev = sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id,'frame':frame-10})
+                face_records_prev = [r for r in frs_all if r['frame'] == frame-10] # sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id,'frame':frame-10})
                 # print(face_records[0].keys())
                 progressbar.set_description(f"movie_id:{movie_id} {len(face_records)}")
 
