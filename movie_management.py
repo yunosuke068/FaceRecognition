@@ -1,11 +1,11 @@
-from common_module import movie_func
+from common_module import movie_func, my_func
 import numpy as np
 import cv2
 import os, glob,sys
 from tqdm import tqdm
 import time
 
-from face_recognition_module import sql_func, my_func
+from face_recognition_module import sql_func
 
 
 def Initialize(sql):
@@ -38,10 +38,10 @@ if __name__ == '__main__':
     args = sys.argv
     if len (args) < 3:
         # print(args)
-        if int(args[1]) == 0:
+        if int(args[1]) == 0: # manageファイルをアップデート
             print('init')
             Initialize(sql)
 
-        elif int(args[1]) == 1:
+        elif int(args[1]) == 1: # FaceDBをアップデート
             print('update')
             Update(sql)

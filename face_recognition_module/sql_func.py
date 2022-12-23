@@ -348,59 +348,14 @@ class FaceDB:
         record = cur.execute(SQL).fetchone()
         return record
 
-    def GetFaceSubjectsIN(self,terms):
-        if not isinstance(terms, dict):
-            print('terms is not dict.')
-            return 0
-        terms_SQL = ""
-        flag = True
-        for k in terms:
-            if isinstance(terms[k],list):
-                str = ''.join([f'{v},' for v in terms[k]])
-                terms_SQL = f"{k} in({str[0:-1]})"
-                SQL = f"SELECT * FROM FaceSubjects WHERE " + terms_SQL
-                records = self.cursor.execute(SQL).fetchall()
-                col = face_subjects_col
-                return self.GenerateRecordsInDict(col,records)
-
-    """Bonds"""
-    # self.bonds_col = ['id','subject_id_0','subject_id_1','similarity','frame_difference','created_at','updated_at']
-    def GetBonds(self,col=['*'],terms={}):
-        if '*' in col:
-            col = self.bonds_col
-        terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
-        col_str = self.GenerateColumnStr(col)
-        SQL = f"SELECT {col_str} FROM Bonds  {terms_SQL}"
-        records = self.cursor.execute(SQL).fetchall()
-        return self.GenerateRecordsInDict(col,records)
-
-    def InsertBonds(self,terms):
-        col = "".join([f"{k}," for k in terms.keys()])[:-1]
-        val = "".join([f"{v}," for v in terms.values()])[:-1]
-        SQL = f"insert into Bonds({col}) values({val})"
-        self.cursor.execute(SQL)
-        self.connect.commit()
-
-    # Bondsのレコードの追加または、subject_idの更新
-    def UpdateBonds(self,terms):
-        cur = self.cursor
-        id = cur.execute(f"SELECT id FROM Bonds WHERE subject_id_0 = {terms['subject_id_0']}").fetchone()
-        if id:
-            set_str = ''.join([f' {k} = {v},' for k,v in zip(terms.keys(),terms.values())])[:-1]
-            SQLs = [f"update Bonds set{set_str} WHERE id = {id[0]}"]
-            for SQL in SQLs:
-                cur.execute(SQL)
-            self.connect.commit()
-        else:
-            self.InsertBonds(terms)
 
     """ALL"""
-    def GetRecords(self,table='',col=['*'],terms={}):
+    def GetRecords(self,table='',col=['*'],terms={},option={'sql_str':''}):
         if '*' in col:
             col = self.col_dic[table]
         terms_SQL = self.GenerateWhereAndTerms(terms) if len(terms.keys()) > 0 else ""
         col_str = self.GenerateColumnStr(col)
-        SQL = f"SELECT {col_str} FROM {table} {terms_SQL}"
+        SQL = f"SELECT {col_str} FROM {table} {terms_SQL} {option['sql_str']}"
         records = self.cursor.execute(SQL).fetchall()
         return self.GenerateRecordsInDict(col,records)
 
@@ -411,6 +366,18 @@ class FaceDB:
         SQL = f"INSERT INTO {table}({col}) VALUES({val})"
         # print(SQL)
         self.cursor.execute(SQL,insert_data)
+        self.connect.commit()
+
+    def BulkInsertRecords(self,table,values_list):
+        values = values_list[0]
+        col = "".join([f"{k}," for k in values.keys()])[:-1]
+        val = "".join(["?," for v in values.values()])[:-1]
+        insert_data = []
+        for values in values_list:
+            insert_data.append([v for v in values.values()])
+        SQL = f"INSERT INTO {table}({col}) VALUES({val})"
+        # print(SQL)
+        self.cursor.executemany(SQL,insert_data)
         self.connect.commit()
 
     def UpdateRecords(self,table,terms,values):

@@ -1,11 +1,11 @@
-from common_module import movie_func
+from common_module import movie_func, my_func
 import numpy as np
 import cv2
 import os, glob, sys
 from tqdm import tqdm
 import time
 
-from face_recognition_module import sql_func, my_func
+from face_recognition_module import sql_func
 
 from operator import itemgetter
 from tabulate import tabulate
@@ -84,13 +84,11 @@ for movies in sql.GetRecords('Movies',['id'],{}): # GetMoviesProperty()
                 if face_record_0s[-1]['frame'] < face_record_1s[0]['frame']:
                     if sim > sim_thre:
                         groups.append([subject_id_0,subject_id_1,sim])
-                        # sql.UpdateBonds({'subject_id_0':subject_id_0,'subject_id_1':subject_id_1,'similarity':sim,'frame_difference':(face_record_1s[0]['frame']-face_record_0s[-1]['frame'])})
                         sql.UpdateRecords('Bonds',{'subject_id_0':subject_id_0},{'subject_id_0':subject_id_0,'subject_id_1':subject_id_1,'similarity':sim,'frame_difference':(face_record_1s[0]['frame']-face_record_0s[-1]['frame'])})
                         break
 
 
         # subject_id_1で重複の発生するレコードを削除
-        # records = sql.GetBonds(['id','subject_id_0','subject_id_1','similarity','frame_difference'],{})
         records = sql.GetRecords('Bonds',['id','subject_id_0','subject_id_1','similarity','frame_difference'],{})
         dup_subject_id_1 = []
         for subject_id_1 in set([r['subject_id_1'] for r in records]):

@@ -1,13 +1,13 @@
 # FacesテーブルとSubjectsテーブルの中間テーブルの生成
 
-from common_module import movie_func
+from common_module import movie_func, my_func
 import numpy as np
 import cv2
 import os, glob, sys
 from tqdm import tqdm
 import time
 
-from face_recognition_module import sql_func, my_func
+from face_recognition_module import sql_func
 from operator import itemgetter
 
 args = sys.argv

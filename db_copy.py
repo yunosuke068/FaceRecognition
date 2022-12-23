@@ -1,11 +1,11 @@
-from common_module import movie_func
+from common_module import movie_func, my_func
 import numpy as np
 import cv2
 import os, glob
 from tqdm import tqdm
 import time
 
-from face_recognition_module import sql_func, my_func
+from face_recognition_module import sql_func
 
 # path = 'db/split_db/FaceDB1_5.db'
 path = 'db/split_db/FaceDB6_.db'
