@@ -80,7 +80,7 @@ for mcr in movie_complete_records:
     face_db_sql.UpdateRecords('Completes', {'movie_id':mcr['id']}, movie_manage_cr)
 
     if len(glob.glob(f"{config['movie_path']}/{mcr['name']}.mp4")) == 0:
-        print(f"{mcr['name']}.mp4 is not exists")
+        print(f"{mcr['id']} {mcr['name']}.mp4 is not exists")
         continue
 
     # 顔認識処理
