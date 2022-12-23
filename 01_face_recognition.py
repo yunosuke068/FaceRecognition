@@ -106,7 +106,7 @@ for mcr in movie_complete_records:
             face_db_mr = face_db_sql.GetRecords('Movies',['*'])[0]
         
         # 動画を参照するMovieインスタンス
-        movie = movie_func.Movie(face_db_mr['path'])
+        movie = movie_func.Movie(f"{config['movie_path']}/{mcr['name']}.mp4")
         # Facesテーブルのframeカラムの最大値を取得（前回最後に読み込んフレーム値を取得）
         last_frame_records = face_db_sql.GetRecords('Faces',['frame'],option={'sql_str':'ORDER BY FRAME DESC LIMIT 1'})
 
