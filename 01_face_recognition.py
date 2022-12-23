@@ -11,10 +11,12 @@ from face_recognition_module import sql_func
 
 from tabulate import tabulate
 
+# 環境の確認
 with open('../enviroment.yaml', 'r') as yml:
     enviroment = yaml.safe_load(yml)['enviroment']
 print('enviroment:', enviroment)
 
+# 設定ファイルの読み込み
 with open('config.yaml', 'r') as yml:
     config = yaml.safe_load(yml)[enviroment]
 # print(config)
@@ -71,23 +73,26 @@ movie_complete_records = [{'id':r[0], 'name':r[1], 'path':r[2], 'fps':r[3], 'fra
 
 # 顔認識処理を行うframe rate
 frame_rate = 10
-for mcr in movie_complete_records:
-    # FaceDBを参照するsql
-    face_db_sql = sql_func.FaceDB(f"{config['face_db_path']}/FaceDB{mcr['id']}.db")
 
-    # FaceDBレコードのCompletesテーブルを更新
-    movie_manage_cr = movie_manage_sql.GetRecords('Completes',['*'],{'movie_id':mcr['id']},option={'sql_str':'LIMIT 1'})[0]
-    face_db_sql.UpdateRecords('Completes', {'movie_id':mcr['id']}, movie_manage_cr)
+for mcr in movie_complete_records:
 
     if len(glob.glob(f"{config['movie_path']}/{mcr['name']}.mp4")) == 0:
         print(f"{mcr['id']} {mcr['name']}.mp4 is not exists")
         continue
+    else:
+        print(f"{mcr['id']} {mcr['name']}.mp4 is exists")
 
     # 顔認識処理
     if mcr['flag_main'] == 9: # 顔認識処理が実行されていない
-        print(mcr)
-        print(my_func.seconds2time(mcr['frame']/mcr['fps']))
-        face_db_mrs = face_db_sql.GetRecords('Movies',['*']) # FaceDBのMoviesレコードを取得
+        # FaceDBを参照するsql
+        face_db_sql = sql_func.FaceDB(f"{config['face_db_path']}/FaceDB{mcr['id']}.db")
+
+        # FaceDBレコードのCompletesテーブルを更新
+        movie_manage_cr = movie_manage_sql.GetRecords('Completes',['*'],{'movie_id':mcr['id']},option={'sql_str':'LIMIT 1'})[0]
+        face_db_sql.UpdateRecords('Completes', {'movie_id':mcr['id']}, movie_manage_cr)
+
+        # FaceDBのMoviesレコードを取得
+        face_db_mrs = face_db_sql.GetRecords('Movies',['*'])
 
         # FaceDBにおけるMoviesレコードの存在チェック
         if len(face_db_mrs) > 0: # FaceDBのMoviesにレコードが存在する
@@ -110,7 +115,7 @@ for mcr in movie_complete_records:
         # Facesテーブルのframeカラムの最大値を取得（前回最後に読み込んフレーム値を取得）
         last_frame_records = face_db_sql.GetRecords('Faces',['frame'],option={'sql_str':'ORDER BY FRAME DESC LIMIT 1'})
 
-        # Facesテーブルのfeameカラムの最大値の存在チェック
+        # Facesテーブルのframeカラムの最大値の存在チェック
         if len(last_frame_records) > 0: # frameカラムの最大値が存在する
             last_frame = last_frame_records[0]['frame'] # 読み込み開始フレーム
 
@@ -147,7 +152,11 @@ for mcr in movie_complete_records:
             if len(insert_values) > 5000:
                 face_db_sql.BulkInsertRecords('Faces',insert_values)
                 insert_values = []
+        face_db_sql.BulkInsertRecords('Faces',insert_values)
         
+        # FaceDBのCompletesを更新
         face_db_sql.UpdateRecords('Completes',{'movie_id':movie_id}, {'flag_main':1})
         face_db_cr = face_db_sql.GetRecords('Completes',['*'],{'movie_id':movie_id})[0]
+        
+        # MovieManageDBのCompletesを更新
         movie_manage_sql.UpdateRecords('Completes',{'movie_id':movie_id},face_db_cr)
