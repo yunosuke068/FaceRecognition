@@ -79,6 +79,10 @@ for mcr in movie_complete_records:
     movie_manage_cr = movie_manage_sql.GetRecords('Completes',['*'],{'movie_id':mcr['id']},option={'sql_str':'LIMIT 1'})[0]
     face_db_sql.UpdateRecords('Completes', {'movie_id':mcr['id']}, movie_manage_cr)
 
+    if len(glob.glob(f"{config['movie_path']}/{mcr['name']}.mp4")) == 0:
+        print(f"{mcr['name']}.mp4 is not exists")
+        continue
+
     # 顔認識処理
     if mcr['flag_main'] == 9: # 顔認識処理が実行されていない
         print(mcr)
