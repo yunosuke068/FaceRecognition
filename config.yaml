@@ -2,9 +2,11 @@ development:
   movie_path: 'C:\Users\yunos\workspace\python\FaceRecognition\db\movie'
   movie_manage_path: 'C:\Users\yunos\workspace\python\FaceRecognition\db\MovieManage.db'
   face_db_path: 'C:\Users\yunos\workspace\python\FaceRecognition\db\split_db'
+  face_recognition_frame_rate: 10
 
 
 colaboratory:
   movie_path: '/content/drive/MyDrive/ColaboratoryData/movie'
   movie_manage_path: '/content/drive/MyDrive/ColaboratoryData/MovieManage.db'
   face_db_path: '/content/drive/MyDrive/ColaboratoryData/FaceDB'
+  face_recognition_frame_rate: 10

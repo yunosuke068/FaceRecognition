@@ -72,7 +72,7 @@ movie_complete_records =  movie_manage_sql.cursor.execute(sql_str).fetchall()
 movie_complete_records = [{'id':r[0], 'name':r[1], 'path':r[2], 'fps':r[3], 'frame':r[4], 'flag_main':r[5], 'flag_subject':r[6], 'flag_bond':r[7], 'flag_split':r[8]} for r in movie_complete_records]
 
 # 顔認識処理を行うframe rate
-frame_rate = 10
+frame_rate = config['face_recognition_frame_rate']
 
 for mcr in movie_complete_records:
 
@@ -153,7 +153,7 @@ for mcr in movie_complete_records:
                 face_db_sql.BulkInsertRecords('Faces',insert_values)
                 insert_values = []
         face_db_sql.BulkInsertRecords('Faces',insert_values)
-        
+
         # FaceDBのCompletesを更新
         face_db_sql.UpdateRecords('Completes',{'movie_id':movie_id}, {'flag_main':1})
         face_db_cr = face_db_sql.GetRecords('Completes',['*'],{'movie_id':movie_id})[0]
