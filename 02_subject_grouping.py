@@ -78,7 +78,6 @@ for mcr in movie_complete_records:
             frame_start = face_db_sql.GetRecords('Faces',['frame'],{'id':last_face_id},option={'sql_str':'LIMIT 1'})[0]['frame'] # 読み込み開始フレーム
         else: # face_idカラムにレコードが存在しない
             frame_start = 1 # 読み込み開始フレーム
-        print(frame_start)
 
         # movie_idが一致するFacesレコードを取得
         frs_all = face_db_sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id})
