@@ -83,8 +83,10 @@ for mcr in movie_complete_records:
         frs_all = face_db_sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id})
 
         # 結合処理
-        face_db_sql.cursor.execute('DELETE FROM FaceSubjects')
-        face_db_sql.cursor.execute('DELETE FROM Subjects')
+        if len(face_db_sql.GetRecords('FaceSubjects',['*'],option={'sql_str':'LIMIT 10'})) > 0:
+            face_db_sql.cursor.execute('DELETE FROM FaceSubjects')
+        if len(face_db_sql.GetRecords('Subjects',['*'],option={'sql_str':'LIMIT 10'})) > 0:
+            face_db_sql.cursor.execute('DELETE FROM Subjects')
 
         progressbar = tqdm(np.arange(frame_start,last_frame+1,config['face_recognition_frame_rate']),ncols= 0)
         progressbar.set_description(f"movie_id:{movie_id}")
