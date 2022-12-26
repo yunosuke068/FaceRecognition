@@ -71,7 +71,7 @@ class FaceDB:
 
         # create Subjects table
         SQL = """CREATE TABLE IF NOT EXISTS Subjects(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER,
         movie_id int,
         order_number int,
         face_id int,
@@ -84,7 +84,7 @@ class FaceDB:
 
         # create FaceSubjects table
         SQL = """CREATE TABLE IF NOT EXISTS FaceSubjects(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER,
         face_id int,
         subject_id int,
 
@@ -113,7 +113,7 @@ class FaceDB:
         cur.execute('PRAGMA foreign_keys=true')
 
         # updated_atのトリガーを追加
-        for table in ['Faces','Movies']:
+        for table in ['Faces','Movies','Completes','FaceSubjects','Subjects']:
             self.CreateUpdatedAtTrigger(table)
 
         # データベースへコミット。これで変更を反映される

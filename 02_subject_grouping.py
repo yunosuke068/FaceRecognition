@@ -83,8 +83,15 @@ for mcr in movie_complete_records:
         frs_all = face_db_sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id})
 
         # 結合処理
+        face_db_sql.cursor.execute('DELETE FROM FaceSubjects')
+        face_db_sql.cursor.execute('DELETE FROM Subjects')
+
         progressbar = tqdm(np.arange(frame_start,last_frame+1,config['face_recognition_frame_rate']),ncols= 0)
         progressbar.set_description(f"movie_id:{movie_id}")
+
+        subject_arr = []
+        face_subject_arr = []
+
         for frame in progressbar:
             frs = [fr for fr in frs_all if fr['frame'] == frame]
 
@@ -101,13 +108,13 @@ for mcr in movie_complete_records:
                         face_id = frs[i]['id']
                         
                         # SubjectsレコードをFaceDBに追加
-                        face_db_sql.InsertSubjects(movie_id, face_id)
+                        subject_arr.append({'movie_id':movie_id, 'id':len(subject_arr)+1, 'order_number':len(subject_arr)+1, 'face_id':face_id})
 
-                        # face_idが一致するSubjectsレコードのidを取得
-                        subject_id = face_db_sql.GetRecords('Subjects',['id'],{'movie_id':movie_id,'face_id':face_id},option={'sql_str':'LIMIT 1'})[0]['id']
+                        # face_idに一致するsubject_idを取得する
+                        subject_id = [r['id'] for r in subject_arr if r['face_id'] == face_id][0]
 
                         # FaceSubjectsレコードをFaceDBに追加
-                        face_db_sql.InsertRecords('FaceSubjects',{'face_id':face_id, 'subject_id':subject_id})
+                        face_subject_arr.append({'id':len(face_subject_arr)+1, 'face_id':face_id,'subject_id':subject_id})
 
                     else: # 対応する人物idが存在する
                         # current frameのface_idを取得
@@ -117,25 +124,31 @@ for mcr in movie_complete_records:
                         pre_face_id = face_combination[1][i]
 
                         # pre_face_idに一致するsubject_idを取得
-                        subject_id = face_db_sql.GetRecords('FaceSubjects',['subject_id'],{'face_id':pre_face_id},option={'sql_str':'LIMIT 1'})[0]['subject_id']
-
-                        # FaceSubjectsのupdate
-                        face_db_sql.UpdateRecords('FaceSubjects',{'face_id':cur_face_id},{'face_id':cur_face_id,'subject_id':subject_id})
+                        subject_id = [r['subject_id'] for r in face_subject_arr if r['face_id'] == pre_face_id][0]
+                        
+                        # FaceSubjectsレコードをFaceDBに追加
+                        face_subject_arr.append({'id':len(face_subject_arr)+1, 'face_id':cur_face_id,'subject_id':subject_id})
             
             elif (len(frs_prev)==0)&(len(frs)>0): # 存在しない
                 for fr in frs:
                     face_id = fr['id']
 
                     # Subjectsの重複追加を防ぐ
-                    if len(face_db_sql.GetRecords('Subjects',['id'],{'movie_id':movie_id,'face_id':face_id}))==0:
+                    if len(subject_arr)==0:
                         # SubjectsレコードをFaceDBに追加
-                        face_db_sql.InsertSubjects(movie_id, face_id)
+                        # face_db_sql.InsertSubjects(movie_id, face_id)
+                        subject_arr.append({'movie_id':movie_id, 'id':len(subject_arr)+1, 'order_number':len(subject_arr)+1, 'face_id':face_id})
 
                         # face_idに一致するsubject_idを取得する
-                        subject_id = face_db_sql.GetRecords('Subjects',['id'],{'movie_id':movie_id,'face_id':face_id}, option={'sql_str':'LIMIT 1'})[0]['id']
+                        subject_id = [r['id'] for r in subject_arr if r['face_id'] == face_id][0]
 
                         # FaceSubjectsレコードをFaceDBに追加
-                        face_db_sql.InsertRecords('FaceSubjects',{'face_id':face_id,'subject_id':subject_id})
+                        # face_db_sql.InsertRecords('FaceSubjects',{'face_id':face_id,'subject_id':subject_id})
+                        face_subject_arr.append({'id':len(face_subject_arr)+1, 'face_id':face_id,'subject_id':subject_id})
+            if len(face_subject_arr) > 5000:
+                face_db_sql.BulkInsertRecords('FaceSubjects', face_subject_arr)
+                face_subject_arr = []
 
+        face_db_sql.BulkInsertRecords('Subjects', subject_arr)
         # Completesのfalag_subjectを更新
         face_db_sql.UpdateRecords('Completes',{'movie_id':movie_id},{'flag_subject':1})
