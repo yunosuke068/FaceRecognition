@@ -54,114 +54,114 @@ movie_complete_records = [{'id':r[0], 'name':r[1], 'path':r[2], 'fps':r[3], 'fra
 for mcr in movie_complete_records:
     # 人物のグループ化処理
     if (mcr['flag_main']==1)&(mcr['flag_subject']==9):
-        # movie_idを取得
-        movie_id = mcr['id']
+        # try:
+            # movie_idを取得
+            movie_id = mcr['id']
 
-        print(movie_id, mcr['name'], f"flag_main: {mcr['flag_main']}", f"flag_subject: {mcr['flag_subject']}")
+            print(movie_id, mcr['name'], f"flag_main: {mcr['flag_main']}", f"flag_subject: {mcr['flag_subject']}")
 
-        # FaceDBを参照するsql
-        face_db_sql = sql_func.FaceDB(f"{config['face_db_path']}/FaceDB{mcr['id']}.db")
+            # FaceDBを参照するsql
+            face_db_sql = sql_func.FaceDB(f"{config['face_db_path']}/FaceDB{mcr['id']}.db")
 
-        # FaceDBレコードのCompletesテーブルを更新
-        movie_manage_cr = movie_manage_sql.GetRecords('Completes',['*'],{'movie_id':mcr['id']},option={'sql_str':'LIMIT 1'})[0]
-        face_db_sql.UpdateRecords('Completes', {'movie_id':mcr['id']}, movie_manage_cr)
+            # FaceDBレコードのCompletesテーブルを更新
+            movie_manage_cr = movie_manage_sql.GetRecords('Completes',['*'],{'movie_id':mcr['id']},option={'sql_str':'LIMIT 1'})[0]
+            face_db_sql.UpdateRecords('Completes', {'movie_id':mcr['id']}, movie_manage_cr)
 
-        # Facesテーブルのframeカラムの最大値を取得（前回最後に読み込んフレーム値を取得）
-        last_frame = face_db_sql.GetRecords('Faces',['frame'],option={'sql_str':'ORDER BY FRAME DESC LIMIT 1'})[0]['frame']
+            # Facesテーブルのframeカラムの最大値を取得（前回最後に読み込んフレーム値を取得）
+            last_frame = face_db_sql.GetRecords('Faces',['frame'],option={'sql_str':'ORDER BY FRAME DESC LIMIT 1'})[0]['frame']
 
-        # FaceSubjectsテーブルのface_idカラムの最大値を取得（前回最後に読み込まれたFacesのidを取得）
-        last_face_id = face_db_sql.GetRecords('FaceSubjects',['face_id'],option={'sql_str':'ORDER BY face_id LIMIT 1'})
-        
-        # FaceSubjectsテーブルのface_idカラムの最大値の存在チェック
-        if len(last_face_id) > 0: # face_idカラムにレコードが存在する
-            last_face_id = last_face_id[-1]['face_id']
-            frame_start = face_db_sql.GetRecords('Faces',['frame'],{'id':last_face_id},option={'sql_str':'LIMIT 1'})[0]['frame'] # 読み込み開始フレーム
-        else: # face_idカラムにレコードが存在しない
-            frame_start = 1 # 読み込み開始フレーム
-
-        # movie_idが一致するFacesレコードを取得
-        frs_all = face_db_sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id})
-
-        # 結合処理
-        if len(face_db_sql.GetRecords('FaceSubjects',['*'],option={'sql_str':'LIMIT 10'})) > 0:
-            face_db_sql.cursor.execute('DELETE FROM FaceSubjects')
-        if len(face_db_sql.GetRecords('Subjects',['*'],option={'sql_str':'LIMIT 10'})) > 0:
-            face_db_sql.cursor.execute('DELETE FROM Subjects')
-
-        progressbar = tqdm(np.arange(frame_start,last_frame+1,config['face_recognition_frame_rate']),ncols= 0)
-        progressbar.set_description(f"movie_id:{movie_id}")
-
-        subject_arr = []
-        face_subject_arr = []
-
-        for frame in progressbar:
-            frs = [fr for fr in frs_all if fr['frame'] == frame]
-
-            frs_prev = [fr for fr in frs_all if fr['frame'] == frame-config['face_recognition_frame_rate']]
-
-            # ひとつ前の顔認識処理実行frameのFaces Recordsの存在チェック
-            if (len(frs_prev)>0)&(len(frs)>0): # 存在する
-                # 類似度の高い組み合わせの生成
-                face_combination = my_func.RecordsCombination(frs_prev, frs)
-                
-                # Subjectsレコード・FaceSubjectsレコードの追加処理
-                for i in range(len(face_combination[0])):
-                    if face_combination[1][i] == 0: # 対応する人物idが存在しない
-                        face_id = frs[i]['id']
-                        
-                        # SubjectsレコードをFaceDBに追加
-                        subject_arr.append({'movie_id':movie_id, 'id':len(subject_arr)+1, 'order_number':len(subject_arr)+1, 'face_id':face_id})
-
-                        # face_idに一致するsubject_idを取得する
-                        subject_id = [r['id'] for r in subject_arr if r['face_id'] == face_id][0]
-
-                        
-                        face_subject_id = max([r['id'] for r in face_subject_arr])+1 if len(face_subject_arr) > 0 else 1
-
-                        # FaceSubjectsレコードをFaceDBに追加
-                        face_subject_arr.append({'id':face_subject_id, 'face_id':face_id,'subject_id':subject_id})
-
-                    else: # 対応する人物idが存在する
-                        # current frameのface_idを取得
-                        cur_face_id = face_combination[0][i]
-
-                        # マッチするひとつ前のface_idを取得
-                        pre_face_id = face_combination[1][i]
-
-                        # pre_face_idに一致するsubject_idを取得
-                        subject_id = [r['subject_id'] for r in face_subject_arr if r['face_id'] == pre_face_id][0]
-                        
-                        face_subject_id = max([r['id'] for r in face_subject_arr])+1 if len(face_subject_arr) > 0 else 1
-                        
-                        # FaceSubjectsレコードをFaceDBに追加
-                        face_subject_arr.append({'id':face_subject_id, 'face_id':cur_face_id,'subject_id':subject_id})
+            # FaceSubjectsテーブルのface_idカラムの最大値を取得（前回最後に読み込まれたFacesのidを取得）
+            last_face_id = face_db_sql.GetRecords('FaceSubjects',['face_id'],option={'sql_str':'ORDER BY face_id LIMIT 1'})
             
-            elif (len(frs_prev)==0)&(len(frs)>0): # 存在しない
-                for fr in frs:
-                    face_id = fr['id']
+            # FaceSubjectsテーブルのface_idカラムの最大値の存在チェック
+            if len(last_face_id) > 0: # face_idカラムにレコードが存在する
+                last_face_id = last_face_id[-1]['face_id']
+                frame_start = face_db_sql.GetRecords('Faces',['frame'],{'id':last_face_id},option={'sql_str':'LIMIT 1'})[0]['frame'] # 読み込み開始フレーム
+            else: # face_idカラムにレコードが存在しない
+                frame_start = 1 # 読み込み開始フレーム
 
-                    # Subjectsの重複追加を防ぐ
-                    if len(subject_arr)==0:
+            # movie_idが一致するFacesレコードを取得
+            frs_all = face_db_sql.GetRecords('Faces',['id','movie_id','frame','embedding'],{'movie_id':movie_id})
+
+            # 結合処理
+            if len(face_db_sql.GetRecords('FaceSubjects',['*'],option={'sql_str':'LIMIT 10'})) > 0:
+                face_db_sql.cursor.execute('DELETE FROM FaceSubjects')
+            if len(face_db_sql.GetRecords('Subjects',['*'],option={'sql_str':'LIMIT 10'})) > 0:
+                face_db_sql.cursor.execute('DELETE FROM Subjects')
+
+            progressbar = tqdm(np.arange(frame_start,last_frame+1,config['face_recognition_frame_rate']),ncols= 0)
+            progressbar.set_description(f"movie_id:{movie_id}")
+
+            subject_arr = []
+            face_subject_arr = []
+
+            for frame in progressbar:
+                frs = [fr for fr in frs_all if fr['frame'] == frame]
+
+                frs_prev = [fr for fr in frs_all if fr['frame'] == frame-config['face_recognition_frame_rate']]
+
+                # ひとつ前の顔認識処理実行frameのFaces Recordsの存在チェック
+                if (len(frs_prev)>0)&(len(frs)>0): # 存在する
+                    
+                    # 類似度の高い組み合わせの生成
+                    face_combination = my_func.RecordsCombination(frs_prev, frs)
+                    
+                    # Subjectsレコード・FaceSubjectsレコードの追加処理
+                    for i in range(len(face_combination[0])):
+                        if face_combination[1][i] == 0: # 対応する人物idが存在しない
+                            face_id = frs[i]['id']
+                            
+                            # SubjectsレコードをFaceDBに追加
+                            subject_arr.append({'movie_id':movie_id, 'id':len(subject_arr)+1, 'order_number':len(subject_arr)+1, 'face_id':face_id})
+
+                            # face_idに一致するsubject_idを取得する
+                            subject_id = [r['id'] for r in subject_arr if r['face_id'] == face_id][0]
+
+                            face_subject_id = max([r['id'] for r in face_subject_arr])+1 if len(face_subject_arr) > 0 else 1
+
+                            # FaceSubjectsレコードをFaceDBに追加
+                            face_subject_arr.append({'id':face_subject_id, 'face_id':face_id,'subject_id':subject_id})
+
+                        else: # 対応する人物idが存在する
+                            # current frameのface_idを取得
+                            cur_face_id = face_combination[0][i]
+
+                            # マッチするひとつ前のface_idを取得
+                            pre_face_id = face_combination[1][i]
+
+                            # pre_face_idに一致するsubject_idを取得
+                            subject_id = [r['subject_id'] for r in face_subject_arr if r['face_id'] == pre_face_id][0]
+                            
+                            face_subject_id = max([r['id'] for r in face_subject_arr])+1 if len(face_subject_arr) > 0 else 1
+                            
+                            # FaceSubjectsレコードをFaceDBに追加
+                            face_subject_arr.append({'id':face_subject_id, 'face_id':cur_face_id,'subject_id':subject_id})
+                
+                elif (len(frs_prev)==0)&(len(frs)>0): # 存在しない
+                    # print(frame,'=','>')
+                    for fr in frs:
+                        face_id = fr['id']
+
                         # SubjectsレコードをFaceDBに追加
-                        # face_db_sql.InsertSubjects(movie_id, face_id)
                         subject_arr.append({'movie_id':movie_id, 'id':len(subject_arr)+1, 'order_number':len(subject_arr)+1, 'face_id':face_id})
 
                         # face_idに一致するsubject_idを取得する
                         subject_id = [r['id'] for r in subject_arr if r['face_id'] == face_id][0]
 
                         # FaceSubjectsレコードをFaceDBに追加
-                        # face_db_sql.InsertRecords('FaceSubjects',{'face_id':face_id,'subject_id':subject_id})
                         face_subject_id = max([r['id'] for r in face_subject_arr])+1 if len(face_subject_arr) > 0 else 1
                         face_subject_arr.append({'id':face_subject_id, 'face_id':face_id,'subject_id':subject_id})
-            if len(face_subject_arr) > config['bulk_insert_size']:
-                face_db_sql.BulkInsertRecords('FaceSubjects', face_subject_arr[:config['bulk_insert_size']-100])
-                face_subject_arr = face_subject_arr[-100:]
-        face_db_sql.BulkInsertRecords('FaceSubjects', face_subject_arr)
-        face_db_sql.BulkInsertRecords('Subjects', subject_arr)
-        
-        # FaceDBのCompletesを更新
-        face_db_sql.UpdateRecords('Completes',{'movie_id':movie_id}, {'flag_subject':1})
-        face_db_cr = face_db_sql.GetRecords('Completes',['*'],{'movie_id':movie_id})[0]
-        
-        # MovieManageDBのCompletesを更新
-        movie_manage_sql.UpdateRecords('Completes',{'movie_id':movie_id},face_db_cr)
+                if len(face_subject_arr) > config['bulk_insert_size']:
+                    face_db_sql.BulkInsertRecords('FaceSubjects', face_subject_arr[:config['bulk_insert_size']-100])
+                    face_subject_arr = face_subject_arr[-100:]
+            face_db_sql.BulkInsertRecords('FaceSubjects', face_subject_arr)
+            face_db_sql.BulkInsertRecords('Subjects', subject_arr)
+            
+            # FaceDBのCompletesを更新
+            face_db_sql.UpdateRecords('Completes',{'movie_id':movie_id}, {'flag_subject':1})
+            face_db_cr = face_db_sql.GetRecords('Completes',['*'],{'movie_id':movie_id})[0]
+            
+            # MovieManageDBのCompletesを更新
+            movie_manage_sql.UpdateRecords('Completes',{'movie_id':movie_id},face_db_cr)
+        # except Exception as e:
+        #     print('Error:',e)
