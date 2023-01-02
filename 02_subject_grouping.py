@@ -115,8 +115,11 @@ for mcr in movie_complete_records:
                         # face_idに一致するsubject_idを取得する
                         subject_id = [r['id'] for r in subject_arr if r['face_id'] == face_id][0]
 
+                        
+                        face_subject_id = max([r['id'] for r in face_subject_arr])+1 if len(face_subject_arr) > 0 else 1
+
                         # FaceSubjectsレコードをFaceDBに追加
-                        face_subject_arr.append({'id':len(face_subject_arr)+1, 'face_id':face_id,'subject_id':subject_id})
+                        face_subject_arr.append({'id':face_subject_id, 'face_id':face_id,'subject_id':subject_id})
 
                     else: # 対応する人物idが存在する
                         # current frameのface_idを取得
@@ -128,8 +131,10 @@ for mcr in movie_complete_records:
                         # pre_face_idに一致するsubject_idを取得
                         subject_id = [r['subject_id'] for r in face_subject_arr if r['face_id'] == pre_face_id][0]
                         
+                        face_subject_id = max([r['id'] for r in face_subject_arr])+1 if len(face_subject_arr) > 0 else 1
+                        
                         # FaceSubjectsレコードをFaceDBに追加
-                        face_subject_arr.append({'id':len(face_subject_arr)+1, 'face_id':cur_face_id,'subject_id':subject_id})
+                        face_subject_arr.append({'id':face_subject_id, 'face_id':cur_face_id,'subject_id':subject_id})
             
             elif (len(frs_prev)==0)&(len(frs)>0): # 存在しない
                 for fr in frs:
@@ -146,11 +151,17 @@ for mcr in movie_complete_records:
 
                         # FaceSubjectsレコードをFaceDBに追加
                         # face_db_sql.InsertRecords('FaceSubjects',{'face_id':face_id,'subject_id':subject_id})
-                        face_subject_arr.append({'id':len(face_subject_arr)+1, 'face_id':face_id,'subject_id':subject_id})
-            if len(face_subject_arr) > 5000:
-                face_db_sql.BulkInsertRecords('FaceSubjects', face_subject_arr)
-                face_subject_arr = []
-
+                        face_subject_id = max([r['id'] for r in face_subject_arr])+1 if len(face_subject_arr) > 0 else 1
+                        face_subject_arr.append({'id':face_subject_id, 'face_id':face_id,'subject_id':subject_id})
+            if len(face_subject_arr) > config['bulk_insert_size']:
+                face_db_sql.BulkInsertRecords('FaceSubjects', face_subject_arr[:config['bulk_insert_size']-100])
+                face_subject_arr = face_subject_arr[-100:]
+        face_db_sql.BulkInsertRecords('FaceSubjects', face_subject_arr)
         face_db_sql.BulkInsertRecords('Subjects', subject_arr)
-        # Completesのfalag_subjectを更新
-        face_db_sql.UpdateRecords('Completes',{'movie_id':movie_id},{'flag_subject':1})
+        
+        # FaceDBのCompletesを更新
+        face_db_sql.UpdateRecords('Completes',{'movie_id':movie_id}, {'flag_subject':1})
+        face_db_cr = face_db_sql.GetRecords('Completes',['*'],{'movie_id':movie_id})[0]
+        
+        # MovieManageDBのCompletesを更新
+        movie_manage_sql.UpdateRecords('Completes',{'movie_id':movie_id},face_db_cr)

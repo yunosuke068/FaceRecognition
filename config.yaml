@@ -3,10 +3,15 @@ development:
   movie_manage_path: 'C:\Users\yunos\workspace\python\FaceRecognition\db\MovieManage.db'
   face_db_path: 'C:\Users\yunos\workspace\python\FaceRecognition\db\split_db'
   face_recognition_frame_rate: 10
-
+  bulk_insert_size: 5000
+  frame_scope: 10
+  similarity_threshold: 0.50
 
 colaboratory:
   movie_path: '/content/drive/MyDrive/ColaboratoryData/movie'
   movie_manage_path: '/content/drive/MyDrive/ColaboratoryData/MovieManage.db'
   face_db_path: '/content/drive/MyDrive/ColaboratoryData/FaceDB'
   face_recognition_frame_rate: 10
+  bulk_insert_size: 5000
+  frame_scope: 10
+  similarity_threshold: 0.50

@@ -89,10 +89,7 @@ class FaceDB:
         subject_id int,
 
         created_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime')),
-        updated_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime')),
-
-        FOREIGN KEY (face_id) REFERENCES Faces(id),
-        FOREIGN KEY (subject_id) REFERENCES Subjects(id)
+        updated_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime'))
         )"""
         cur.execute(SQL)
 
