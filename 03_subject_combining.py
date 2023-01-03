@@ -49,7 +49,7 @@ movie_complete_records = [{'id':r[0], 'name':r[1], 'path':r[2], 'fps':r[3], 'fra
 sampling_record_count = 50
 subject_similarity_threshould = 0.85
 frame_difference_threshould = 30*60*3 # frame * seconds * minutes
-loop_break_count_threshould = 100
+loop_break_count_threshould = 50
 
 
 for mcr in movie_complete_records:
