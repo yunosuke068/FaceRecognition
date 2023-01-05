@@ -55,9 +55,6 @@ loop_break_count_threshould = 50
 for mcr in movie_complete_records:
     if (mcr['flag_subject']==1)&(mcr['flag_bond']==9):
         try:
-            time_start = time.time()
-            if (time.time() - time_start)> 60*60*10: # seconds * minute * hour
-                raise TimeoutError
             print(mcr)
             # movie_idを取得
             movie_id = mcr['id']
@@ -90,8 +87,11 @@ for mcr in movie_complete_records:
 
                 # ループ回数カウント
                 loop_counter = 0
+                time_start = time.time()
                 # targets以降のSubjectsと特徴量をループで比較
                 for subject_id_match in subject_ids[idx+1:]:
+                    if (time.time() - time_start)> 60*60*10: # seconds * minute * hour
+                        raise TimeoutError
                     # すでにマッチングしているsubject_idをパス
                     if subject_id_match in match_subject_ids:
                         continue
