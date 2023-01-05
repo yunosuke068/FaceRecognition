@@ -72,7 +72,11 @@ for mcr in movie_complete_records:
             # Subjectsレコードを取得
             subject_ids = list(set([r['subject_id'] for r in fsfrs]))
 
+            time_start = time.time()
+
             for idx, subject_id_target in enumerate(tqdm(subject_ids[0:])):
+                if (time.time() - time_start)> 60*60*10: # seconds * minute * hour
+                    raise TimeoutError
                 # Subjectsの特徴量をすべて取得
                 embedding_targets = [r['embedding'] for r in fsfrs if r['subject_id'] == subject_id_target]
 
@@ -87,11 +91,8 @@ for mcr in movie_complete_records:
 
                 # ループ回数カウント
                 loop_counter = 0
-                time_start = time.time()
                 # targets以降のSubjectsと特徴量をループで比較
                 for subject_id_match in subject_ids[idx+1:]:
-                    if (time.time() - time_start)> 60*60*10: # seconds * minute * hour
-                        raise TimeoutError
                     # すでにマッチングしているsubject_idをパス
                     if subject_id_match in match_subject_ids:
                         continue
