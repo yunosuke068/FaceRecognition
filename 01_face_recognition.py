@@ -24,7 +24,7 @@ with open('config.yaml', 'r') as yml:
 # ============================
 # MovieManageの更新
 # ============================
-print('Update db/MovieManage.db')
+print('Update MovieManage.db')
 
 # MovieMangeを参照するsql
 movie_manage_sql = sql_func.FaceDB(config['movie_manage_path'])

@@ -1,12 +1,21 @@
 from common_module import movie_func, my_func
 import numpy as np
 import cv2
-import os, glob,sys
+import os, glob,sys, yaml
 from tqdm import tqdm
 import time
 from operator import itemgetter
 
 from face_recognition_module import sql_func
+
+# 環境の確認
+with open('../enviroment.yaml', 'r') as yml:
+    enviroment = yaml.safe_load(yml)['enviroment']
+print('enviroment:', enviroment)
+
+# 設定ファイルの読み込み
+with open('config.yaml', 'r') as yml:
+    config = yaml.safe_load(yml)[enviroment]
 
 args = sys.argv
 
