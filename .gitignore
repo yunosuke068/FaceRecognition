@@ -19,7 +19,6 @@ split_movie/
 
 test*
 
-cvim2023検証.ipynb
 face vs handsの距離とframeの統計情報.ipynb
 hands vs faceの距離とframeの統計情報.ipynb
 NN接触判定3.ipynb
