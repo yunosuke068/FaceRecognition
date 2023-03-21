@@ -13,9 +13,9 @@ db/verification_movie
 
 temporarily_storage/*
 
-movie/
-split_movie/
-
+movie/*
+split_movie/*
+faceTouch/project/*
 
 test*
 
