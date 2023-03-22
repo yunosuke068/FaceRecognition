@@ -85,7 +85,6 @@ class DB:
         names = self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY NAME;").fetchall()
         
         names = [name[0] for name in names if not name[0] in exclusion]
-        print(names)
         return names
     
     def createTable(self, table, column):
@@ -121,8 +120,7 @@ class LandmarkDB(DB):
 
         # create Landmarks table
         table = "Landmarks"
-        column = """movie_id INT,
-                    frame INT,
+        column = """frame INT,
                     time TEXT,
                     width FLOAT,
                     height FLOAT,
@@ -134,10 +132,8 @@ class LandmarkDB(DB):
 
         # create NormLandmarks table
         table = "NormLandmarks"
-        column = """movie_id INT,
-                    frame INT,
+        column = """frame INT,
                     time TEXT,
-                    pose FLIST1d,
                     face FLIST1d,
                     right_hand FLIST1d,
                     left_hand FLIST1d"""
@@ -145,8 +141,7 @@ class LandmarkDB(DB):
 
         # create Distances table
         table = "Distances"
-        column = """movie_id INT,
-                    frame INT,
+        column = """frame INT,
                     time TEXT,
                     face_right_hand FLIST1d,
                     right_hand_face FLIST1d,
@@ -160,8 +155,7 @@ class LandmarkDB(DB):
 
         # create DistanceClass table
         table = "DistanceClass"
-        column = """movie_id INT,
-                    frame INT,
+        column = """frame INT,
                     time TEXT,
                     right_class INT,
                     left_class INT"""
@@ -169,8 +163,7 @@ class LandmarkDB(DB):
 
         # create LandmarkClass table
         table = "LandmarkClass"
-        column = """movie_id INT,
-                    frame INT,
+        column = """frame INT,
                     time TEXT,
                     right_class INT,
                     left_class INT"""
