@@ -54,7 +54,7 @@ def run(
         if ret == False: # 画像が読み込めなかった場合に処理をスキップ
             continue
 
-        # 骨格検出
+        # ==== 骨格検出 ====
         detector.setImage(img) # 画像をセット
         landmarks = {k:detector.landmarks(k) for k in POSE_KEYS} # 骨格検出ランドマークを取得
         # pose,face,handsが全て検出されなかった場合に処理をスキップ
@@ -70,7 +70,7 @@ def run(
             sql.bulkInsertRecords('Landmarks', insert_data_list)
             insert_data_list = []
 
-        # 座標の正規化
+        # ==== 座標の正規化 ====
         parts_concat = []
         exist_flags = {}
         mesh_keys = ['face','right_hand','left_hand']
@@ -98,7 +98,7 @@ def run(
             sql.bulkInsertRecords('NormLandmarks', insert_data_list_norm)
             insert_data_list_norm = []
 
-        # face mesh と hands の距離計算
+        # ==== face mesh と hands の距離計算 ====
         # Landmarkを二次元ndarray化
         landmark_2Darrs = {}
         for k in ['face','right_hand','left_hand']:
