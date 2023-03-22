@@ -18,15 +18,7 @@ split_movie/*
 faceTouch/project/*
 
 test*
-
-face vs handsの距離とframeの統計情報.ipynb
-hands vs faceの距離とframeの統計情報.ipynb
-NN接触判定3.ipynb
-KMeansClustering.ipynb
-KMeansClustering&RNN.ipynb
-KMeansクラスタリング結果一覧.ipynb
-FaceMeshに属性を付与.ipynb
-前処理一覧.ipynb
+yt-dlp.exe
 
 sample.mp4
 sample2.mp4
