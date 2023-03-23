@@ -9,7 +9,7 @@ from pathlib import Path
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
 POSE_KEYS = ['pose','face','left_hand','right_hand']
-BLOCK = 50 # 10000
+BLOCK = 10000
 
 def run(
         movie_source = '0',
