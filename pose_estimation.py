@@ -42,8 +42,8 @@ def run(
     begin_frame = last_record[0] + 1 if last_record else 1
     end_frame = movie.frame_count + 1
 
-    if end_frame == 1:
-        print("movie frame count: 0")
+    if not movie.cap.isOpened():
+        print('movie cap is not open')
         return 0
     
     pbar_frame = tqdm(np.arange(begin_frame,end_frame)) # progress bar
